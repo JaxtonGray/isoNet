@@ -3,7 +3,7 @@
 #SBATCH --job-name=FillData_Batch
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:2
-#SBATCH --partition=gpu-v100
+#SBATCH --partition=gpu-h100
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=64G
 #SBATCH --time=05:00:00
