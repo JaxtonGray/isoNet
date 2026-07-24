@@ -50,7 +50,11 @@ logger.addHandler(fh)
 # 3. Function to grab nearest grid point values for variable in dataset for all rows via vectorized indexing.
 
 # Read in the temperature and precipitation data from the appropriate files
-def read_climate_data(dir_path: str = os.path.join('..', 'Data', 'HydroGFD', 'data_files')) -> xr.Dataset:
+def read_climate_data(dir_path: str = os.path.join('..', 'Data', 'HydroGFD', 'data_files'),
+                      global_bbox = None) -> xr.Dataset:
+    # Arguments:
+    #   - dir_path: The directory path to the NetCDF files
+    #   - global_bbox: The bounding box for the global data (min_lon, min_lat, max_lon, max_lat) (default is None, which means no bounding box will be applied)
     logger.info('Load in Climate Data')
     files = sorted(glob.glob(os.path.join(dir_path, '*.nc')))
 
@@ -67,6 +71,12 @@ def read_climate_data(dir_path: str = os.path.join('..', 'Data', 'HydroGFD', 'da
         datasets,
         combine_attrs="override"
     )
+
+    if global_bbox:
+        ds = ds.sel(
+            lon=slice(global_bbox[0], global_bbox[2]),
+            lat=slice(global_bbox[1], global_bbox[3])
+        )
 
     return ds
 
@@ -507,13 +517,17 @@ if __name__ == "__main__":
         logger.info('No isotope columns specified, skipping attachment of original isotope values')
 
     # Add the KPN data to the dataframe
-    runs_gdf = addKPN(runs_gdf, dir=os.path.join('..', 'Data', 'KPN'))
+    runs_gdf = addKPN(runs_gdf, dir=os.path.join('data', 'KPN'))
 
     # Add the teleconnection indices to the dataframe
-    runs_gdf = addTeleconnectionData(runs_gdf, dir=os.path.join('..', 'Data', 'Teleconnection_Indices', 'teleconnection_indices.csv'))
+    runs_gdf = addTeleconnectionData(runs_gdf, dir=os.path.join('data', 'Teleconnection_Indices', 'teleconnection_indices.csv'))
 
-    # Add the climate data to the dataframe
-    ds = read_climate_data(dir_path=os.path.join('..', 'Data', 'HydroGFD', 'data_files'))
+    # Add the climate data to the dataframe, and subset for global
+    if args.batch_global:
+        ds = read_climate_data(dir_path=os.path.join('data', 'HydroGFD', 'data_files'), 
+                               global_bbox=setup_data['bbox'].geometry.bounds.values[0])
+    else:
+        ds = read_climate_data(dir_path=os.path.join('data', 'HydroGFD', 'data_files'))
     logger.debug('Attach Temperature')
     runs_gdf['Temp'] = attach_nearest_value_vectorized(ds, runs_gdf, var='tasAdjust')
     logger.debug('Attach Precipitation')
