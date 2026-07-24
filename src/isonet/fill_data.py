@@ -38,8 +38,8 @@ logger.setLevel(logging.INFO)
 
 # Set a check for the logger if in batch mode, set the logger to have a different name for the log file, otherwise use the default name
 if args.batch or args.batch_global:
-    fh = logging.FileHandler(os.path.join('..', 'Logs', f'FillData_batch_{args.batch if args.batch else args.batch_global}.log'), mode='w') 
-fh = logging.FileHandler(os.path.join('..', 'Logs', 'FillData.log'), mode='w')
+    fh = logging.FileHandler(os.path.join('logs', f'FillData_batch_{args.batch if args.batch else args.batch_global}.log'), mode='w') 
+fh = logging.FileHandler(os.path.join('logs', 'FillData.log'), mode='w')
 formatter = logging.Formatter('%(asctime)s - %(module)s - %(levelname)s - Line: %(lineno)d - Message: %(message)s')
 fh.setFormatter(formatter)
 logger.addHandler(fh)
