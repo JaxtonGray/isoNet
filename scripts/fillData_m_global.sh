@@ -2,9 +2,10 @@
 #SBATCH --account=def-stadnykt-ab
 #SBATCH --job-name=FillData_Batch
 #SBATCH --nodes=1
-#SBATCH --gpus-per-node=h100:1
+#SBATCH --gres=gpu:2
+#SBATCH --partition=gpu-v100
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=64000MB
+#SBATCH --mem=64G
 #SBATCH --time=05:00:00
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
@@ -34,4 +35,4 @@ pip install --no-index --upgrade pip
 pip install --no-index pandas geopandas numpy scipy rasterio xarray dask netcdf4
 
 # Run the training script
-python src/isonet/fill_data.py runs/global_model/grid_points.geojson --batch_global "$index $year"
+python src/isonet/fill_data.py global_model/grid_points.geojson --batch_global "$index $year"
