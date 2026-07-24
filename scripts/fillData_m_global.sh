@@ -1,16 +1,16 @@
 #!/bin/bash
-#SBATCH --account=def-stadnykt-ab
 #SBATCH --job-name=FillData_Batch
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:2
-#SBATCH --partition=gpu-h100
-#SBATCH --cpus-per-task=16
 #SBATCH --mem=64G
-#SBATCH --time=05:00:00
+#SBATCH --time=0-05:00:00
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --array=1-19
-#SBATCH --output=slurm_logs/fill_data_%A_%a.out
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --gres=gpu:2
+#SBATCH --partition=gpu-a100
 
 # !/bin/bash
 # This section will grab the years to run
