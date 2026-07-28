@@ -547,7 +547,7 @@ if __name__ == "__main__":
         batch_dir = os.path.join(dir_path, 'batch_files')
         os.makedirs(batch_dir, exist_ok=True)
         minx, miny, maxx, maxy = setup_data['bbox'].geometry.bounds
-        runs_gdf.to_csv(os.path.join(batch_dir, f'{setup_data["Name"]}_{setup_data['Start Date'].strftime("%Y")}_({minx:.2f}_{miny:.2f}_{maxx:.2f}_{maxy:.2f})_monthly.csv'), index=False)
+        runs_gdf.to_csv(os.path.join(batch_dir, f"{setup_data['Name']}_{setup_data['Start Date'].strftime('%Y')}_({minx:.2f}_{miny:.2f}_{maxx:.2f}_{maxy:.2f})_monthly.csv"), index=False)
     else:
         # Save the new dataframe to a new file in the same directory as the original file, with the name input_data.csv
         runs_gdf.to_csv(os.path.join(dir_path, f'{setup_data["Name"]}_{startDate.strftime("%Y")}_{endDate.strftime("%Y")}_monthly.csv'), index=False)
