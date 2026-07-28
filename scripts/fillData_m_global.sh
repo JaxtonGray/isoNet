@@ -11,6 +11,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:2
 #SBATCH --partition=gpu-a100
+#SBATCH --output=slurm_output/fillData_m_global_%A_%a.out
 
 # !/bin/bash
 # This section will grab the years to run
