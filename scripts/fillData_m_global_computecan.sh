@@ -13,7 +13,7 @@
 
 # !/bin/bash
 # This section will grab the years to run
-batchInfo=$(sed -n ${SLURM_ARRAY_TASK_ID}p Global_Modelling/batch_index.txt)
+batchInfo=$(sed -n ${SLURM_ARRAY_TASK_ID}p runs/global_model/batch_index.txt)
 
 # Split the batchInfo into index and year
 IFS=' ' read -ra arr <<< "$batchInfo"
