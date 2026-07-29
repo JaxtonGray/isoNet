@@ -418,6 +418,7 @@ def read_setup_data(dir_path: str) -> dict:
         setup_data['dO18'] = None
         setup_data['dH2'] = None
         setup_data['bbox'] = bbox
+        setup_data['bbox_index'] = int(index)
 
 
     return setup_data
@@ -490,7 +491,8 @@ if __name__ == "__main__":
             gdf_unique.to_file(os.path.join(dir_path, 'altitudes.geojson'), driver='GeoJSON')
     else:
         logger.info('Load in saved Altitude data')
-        gdf_unique = gpd.read_file(altitudes_path)
+        altitudes = gpd.read_file(altitudes_path)
+        gdf_unique = get_unique_coordinates(gdf)
 
     # Go through and grab the min and max range of date values from the original dataframe
     # Then create a new dataframe with all the combinations of unique coordinates and dates within that range
@@ -534,7 +536,7 @@ if __name__ == "__main__":
     runs_gdf['Precip'] = attach_nearest_value_vectorized(ds, runs_gdf, var='prAdjust')
 
     # Add Altitude data to the dataframe by joining on the geometry column
-    runs_gdf = runs_gdf.join(gdf_unique.set_index('geometry')['Alt'], on='geometry', how='left')
+    runs_gdf = runs_gdf.join(altitudes.set_index('geometry')['Alt'], on='geometry', how='left')
 
     # Drop the geometry column, as it is no longer needed
     runs_gdf.drop(columns=['geometry'], inplace=True)
@@ -547,7 +549,7 @@ if __name__ == "__main__":
         batch_dir = os.path.join(dir_path, 'batch_files')
         os.makedirs(batch_dir, exist_ok=True)
         minx, miny, maxx, maxy = setup_data['bbox'].geometry.bounds
-        runs_gdf.to_csv(os.path.join(batch_dir, f"{setup_data['Name']}_{setup_data['Start Date'].strftime('%Y')}_({minx:.2f}_{miny:.2f}_{maxx:.2f}_{maxy:.2f})_monthly.csv"), index=False)
+        runs_gdf.to_csv(os.path.join(batch_dir, f"{setup_data['Name']}_{setup_data['Start Date'].strftime('%Y')}_(index_{setup_data['bbox_index']})_monthly.csv"), index=False)
     else:
         # Save the new dataframe to a new file in the same directory as the original file, with the name input_data.csv
         runs_gdf.to_csv(os.path.join(dir_path, f'{setup_data["Name"]}_{startDate.strftime("%Y")}_{endDate.strftime("%Y")}_monthly.csv'), index=False)
