@@ -2,8 +2,12 @@
 .vscode/
 __pycache__/
 
-# Ignore everything withing the data directory
+# Ignore everything withing the data and models folders
+models/*
 data/*
+
+# Ignore batch files
+**/batch_files/
 
 # Ignore the Testbook file used for testing functions
 testbook.ipynb
