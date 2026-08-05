@@ -24,25 +24,30 @@ import rasterio as rio
 from scipy.ndimage import distance_transform_edt
 from itertools import product
 
-# Set up the argument parser
-parser = argparse.ArgumentParser(description='Fill in missing data for runs with the different models.')
-parser.add_argument('file_path', type=str, help='The file path to the input CSV')
-parser.add_argument('--daily', action='store_true', help='Run in daily mode (takes in daily data instead of monthly data, default is monthly)')
-parser.add_argument('--batch', type=str, help='Run in batch mode (takes in two years instead of what is provided in setup file)')
-parser.add_argument('--batch_global', type=str, help='Run in batch modewith a global mode setup')
-args = parser.parse_args()
+def parse_args():
+    parser = argparse.ArgumentParser(description='Fill in missing data for runs with the different models.')
+    parser.add_argument('file_path', type=str, help='The file path to the input CSV')
+    parser.add_argument('--daily', action='store_true', help='Run in daily mode (takes in daily data instead of monthly data, default is monthly)')
+    parser.add_argument('--batch', type=str, help='Run in batch mode (takes in two years instead of what is provided in setup file)')
+    parser.add_argument('--batch_global', type=str, help='Run in batch modewith a global mode setup')
+    return parser.parse_args()
 
 # Setup Logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# Set a check for the logger if in batch mode, set the logger to have a different name for the log file, otherwise use the default name
-if args.batch or args.batch_global:
-    fh = logging.FileHandler(os.path.join('logs', f'FillData_batch_{args.batch if args.batch else args.batch_global}.log'), mode='w') 
-fh = logging.FileHandler(os.path.join('logs', 'FillData.log'), mode='w')
-formatter = logging.Formatter('%(asctime)s - %(module)s - %(levelname)s - Line: %(lineno)d - Message: %(message)s')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+def setup_logger(args):
+    os.makedirs('logs', exist_ok=True)
+    if args.batch or args.batch_global:
+        log_name = f"FillData_batch_{args.batch if args.batch else args.batch_global}.log"
+    else:
+        log_name = 'FillData.log'
+
+    fh = logging.FileHandler(os.path.join('logs', log_name), mode='w')
+    formatter = logging.Formatter('%(asctime)s - %(module)s - %(levelname)s - Line: %(lineno)d - Message: %(message)s')
+    fh.setFormatter(formatter)
+    logger.handlers.clear()
+    logger.addHandler(fh)
 
 # Climate Data Import
 # 1. Open all NetCDF files and combine them into a single xarray dataset
@@ -380,7 +385,7 @@ def batch_global_setup(global_path: str, index: int) -> gpd.GeoDataFrame:
     # Grab the row that matches the index and year
     return adaptive_boxes.iloc[index]
 
-def read_setup_data(dir_path: str) -> dict:
+def read_setup_data(dir_path: str, args) -> dict:
     # File will be labeled as setup.txt and will contain the following information:
     # Column names for the isotope data, if they exist. If they do not exist setup N/A
     # Start and end date for the data
@@ -438,19 +443,22 @@ def get_runs_gdf(start_date: str, end_date: str, coords: iter, crs: str = 'EPSG:
     if not isDaily:
         date_range = pd.date_range(start=start_date, end=end_date, freq='MS') # Monthly frequency, start of month
         mid_range = date_range + pd.DateOffset(days=14) # Add 14 days to the start of the month to get the middle of the month (15th of the month)
-        runs_df = pd.DataFrame(list(product(mid_range, gdf_unique)), columns=['Date', 'geometry'], crs=crs)
+        runs_df = pd.DataFrame(list(product(mid_range, coords)), columns=['Date', 'geometry'])
     else:
         date_range = pd.date_range(start=start_date, end=end_date, freq='D') # Daily frequency
-        runs_df = pd.DataFrame(list(product(date_range, gdf_unique)), columns=['Date', 'geometry'], crs=crs)
-    return runs_df
+        runs_df = pd.DataFrame(list(product(date_range, coords)), columns=['Date', 'geometry'])
+    return gpd.GeoDataFrame(runs_df, geometry='geometry', crs=crs)
 
 if __name__ == "__main__":
+    args = parse_args()
+    setup_logger(args)
+
     # Read in the necessary data
     file_path = args.file_path
 
     dir_path = os.path.dirname(file_path)
 
-    setup_data = read_setup_data(dir_path)
+    setup_data = read_setup_data(dir_path, args)
 
     if args.batch_global:
         allPoints = gpd.read_file(file_path)
