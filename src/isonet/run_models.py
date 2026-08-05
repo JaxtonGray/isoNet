@@ -1,12 +1,19 @@
 # In this script the models will be used and run against the data that has been setup using the fill_data script
 
 # Import necessary libraries
-import os, glob, re
+import os, glob, re, argparse
 import pandas as pd
 import geopandas as gpd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import keras
+
+# Intialize the argument parser
+def get_parser():
+    parser = argparse.ArgumentParser(description='Run the specified models on the provided data using the given schemes.')
+    parser.add_argument('path', type=str, help='The path to the CSV file or directory containing the data.')
+    parser.add_argument('--batch', action='store_true', help='Flag to indicate if the input path is a directory containing multiple CSV files.')
+    return parser
 
 def modelInfo(modelName, modelGuide=os.path.join('models', 'ModelGuide.csv')):
     '''Load information about the current model from the model guide. This includes the scheme and features used in the model.
@@ -185,4 +192,26 @@ def run_isonet(models: list, data: gpd.GeoDataFrame,
         output_df = pd.concat(output, ignore_index=True)
 
     return output_df
-            
+
+if __name__ == "__main__":
+    # Setup argument parser and parse command line arguments
+    parser = get_parser()
+    args = parser.parse_args()
+
+    # Import data based on whether the --batch flag is set
+    if args.batch:
+        data, oldCols = import_batch_data(args.path)
+    else:
+        data, oldCols = importData(args.path)
+
+    # Load model schemes
+    schemes = load_schemes()
+
+    # Get all the models in the 'models' directory
+    models = glob.glob('models/**/*.keras', recursive=True)
+
+    # Run the models on the data using the schemes
+    output = run_isonet(models, data, schemes)
+
+    # Save the output to a CSV file
+    output.to_csv('output.csv', index=False)
