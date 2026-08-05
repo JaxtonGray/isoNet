@@ -1,2 +1,5 @@
 # Ignore everything withing the data directory
 data/*
+
+# Ignore the Testbook file used for testing functions
+testbook.ipynb
