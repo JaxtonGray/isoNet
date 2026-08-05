@@ -1,3 +1,7 @@
+# Ignore vscode settings folder
+.vscode/
+__pycache__/
+
 # Ignore everything withing the data directory
 data/*
 
