@@ -32,23 +32,6 @@ def parse_args():
     parser.add_argument('--batch_global', type=str, help='Run in batch modewith a global mode setup')
     return parser.parse_args()
 
-# Setup Logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-def setup_logger(args):
-    os.makedirs('logs', exist_ok=True)
-    if args.batch or args.batch_global:
-        log_name = f"FillData_batch_{args.batch if args.batch else args.batch_global}.log"
-    else:
-        log_name = 'FillData.log'
-
-    fh = logging.FileHandler(os.path.join('logs', log_name), mode='w')
-    formatter = logging.Formatter('%(asctime)s - %(module)s - %(levelname)s - Line: %(lineno)d - Message: %(message)s')
-    fh.setFormatter(formatter)
-    logger.handlers.clear()
-    logger.addHandler(fh)
-
 # Climate Data Import
 # 1. Open all NetCDF files and combine them into a single xarray dataset
 # 2. Function that will find the nearest valid grid point for a given point and time within a specified buffer
@@ -60,7 +43,6 @@ def read_climate_data(dir_path: str = os.path.join('..', 'Data', 'HydroGFD', 'da
     # Arguments:
     #   - dir_path: The directory path to the NetCDF files
     #   - global_bbox: The bounding box for the global data (min_lon, min_lat, max_lon, max_lat) (default is None, which means no bounding box will be applied)
-    logger.info('Load in Climate Data')
     files = sorted(glob.glob(os.path.join(dir_path, '*.nc')))
 
     datasets = [
@@ -160,7 +142,6 @@ def attach_nearest_value_vectorized(ds: xr.Dataset,
 
 # Read in the KPN rasters
 def readKPNRasters(dir=os.path.join('..', 'Data', 'KPN')):
-    logger.info('Load in the KPN Data')
     # Create a dictionary to hold the rasters
     folders = glob.glob(os.path.join(dir, '*')) # Get all the files in the current directory
     rasters = {}
@@ -312,7 +293,6 @@ def addKPN(df, dir=os.path.join('..', 'Data', 'KPN')):
 
 # Function to read in the data from the file
 def read_data(file_path: str) -> gpd.GeoDataFrame:
-    logger.info('Load in saved data')
     try:
         data = pd.read_csv(file_path)
         data['Date'] = pd.to_datetime(data['Date'], utc=True)
@@ -357,7 +337,6 @@ def grab_altitude(gdf_unique: gpd.GeoDataFrame, ds: xr.Dataset, var_name: str) -
 # Function to add teleconnection indices to the dataframe
 # Open the dataset containing the teleconnection indices
 def openTeleInd(dir=os.path.join('Teleconnection_Indices', 'teleconnection_indices.csv')):
-    logger.info('Read in Teleconnection Indices')
     tele_df = pd.read_csv(dir)
     return tele_df
 
@@ -393,7 +372,6 @@ def read_setup_data(dir_path: str, args) -> dict:
         # No need for a setup file in the global directory, as the setup data will be read in from the adaptive_boxes.geojson file
         # So only read in the setup file if not running in batch_global mode
         file_path = os.path.join(dir_path, 'setup.txt')
-        logger.debug(f'Reading setup data from {file_path}')
 
         with open(file_path, 'r') as f:
             lines = f.readlines()
@@ -451,7 +429,6 @@ def get_runs_gdf(start_date: str, end_date: str, coords: iter, crs: str = 'EPSG:
 
 if __name__ == "__main__":
     args = parse_args()
-    setup_logger(args)
 
     # Read in the necessary data
     file_path = args.file_path
@@ -469,8 +446,6 @@ if __name__ == "__main__":
     # Add a check to see if the altitude data has already been pulled for the unique coordinates, if so, use that file instead of pulling the data again
     altitudes_path = os.path.join(dir_path, 'altitudes.geojson')
     if not os.path.exists(altitudes_path):
-        logger.info('Retreive Altitude data')
-            
         unique_gdf = get_unique_coordinates(gdf)
 
         # Open the dataset from EarthData
@@ -485,7 +460,6 @@ if __name__ == "__main__":
 
         if args.batch_global:
             # If running in batch_global mode, find all the alitudes for the global points then a box at a time and save them to a file for later use
-            logger.info('Grab Altitude data for global points')
             # Grab the unique coordinates for the global points
             unique_gdf_global = get_unique_coordinates(allPoints)
             # Attach the altitude data to the unique gdf
@@ -498,7 +472,6 @@ if __name__ == "__main__":
             # Save to the directory (NOTE: Add a check for later to see if one already exists and use that instead)
             gdf_unique.to_file(os.path.join(dir_path, 'altitudes.geojson'), driver='GeoJSON')
     else:
-        logger.info('Load in saved Altitude data')
         altitudes = gpd.read_file(altitudes_path)
         gdf_unique = get_unique_coordinates(gdf)
 
@@ -515,17 +488,12 @@ if __name__ == "__main__":
     # Attach the original data to the new dataframe by matching on the date and geometry, this will add the d18O and d2H values to the new dataframe 
     # where they exist in the original dataframe. Only do this if there are isotope columns specified in the arguments, otherwise skip this step.
     if isoCols[0] != None or isoCols[1] != None:
-        logger.info('Attach original isotope values')
         runs_gdf = runs_gdf.join(gdf.set_index(['Date', 'geometry'])[isoCols], on=['Date', 'geometry'], how='left')
     elif isoCols[0] == None and isoCols[1] != None:
-        logger.info('Attach original d2H values')
         runs_gdf = runs_gdf.join(gdf.set_index(['Date', 'geometry'])[isoCols[1]], on=['Date', 'geometry'], how='left')
     elif isoCols[0] != None and isoCols[1] == None:
-        logger.info('Attach original d18O values')
         runs_gdf = runs_gdf.join(gdf.set_index(['Date', 'geometry'])[isoCols[0]], on=['Date', 'geometry'], how='left')
-    else:
-        logger.info('No isotope columns specified, skipping attachment of original isotope values')
-
+    
     # Add the KPN data to the dataframe
     runs_gdf = addKPN(runs_gdf, dir=os.path.join('data', 'KPN'))
 
@@ -538,9 +506,7 @@ if __name__ == "__main__":
                                global_bbox=setup_data['bbox'].geometry.bounds.values[0])
     else:
         ds = read_climate_data(dir_path=os.path.join('data', 'HydroGFD', 'data_files'))
-    logger.debug('Attach Temperature')
     runs_gdf['Temp'] = attach_nearest_value_vectorized(ds, runs_gdf, var='tasAdjust')
-    logger.debug('Attach Precipitation')
     runs_gdf['Precip'] = attach_nearest_value_vectorized(ds, runs_gdf, var='prAdjust')
 
     # Add Altitude data to the dataframe by joining on the geometry column
