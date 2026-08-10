@@ -425,7 +425,7 @@ def get_runs_gdf(start_date: str, end_date: str, coords: iter, crs: str = 'EPSG:
     else:
         date_range = pd.date_range(start=start_date, end=end_date, freq='D') # Daily frequency
         runs_df = pd.DataFrame(list(product(date_range, coords)), columns=['Date', 'geometry'])
-    return gpd.GeoDataFrame(runs_df, geometry='geometry', crs=crs)
+    return gpd.GeoDataFrame(runs_df, geometry=runs_df['geometry'], crs=crs)
 
 if __name__ == "__main__":
     args = parse_args()
