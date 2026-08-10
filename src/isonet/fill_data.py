@@ -503,7 +503,7 @@ if __name__ == "__main__":
     # Add the climate data to the dataframe, and subset for global
     if args.batch_global:
         ds = read_climate_data(dir_path=os.path.join('data', 'HydroGFD', 'data_files'), 
-                               global_bbox=setup_data['bbox'].geometry.bounds.values[0])
+                               global_bbox=setup_data['bbox'].geometry.bounds)
     else:
         ds = read_climate_data(dir_path=os.path.join('data', 'HydroGFD', 'data_files'))
     runs_gdf['Temp'] = attach_nearest_value_vectorized(ds, runs_gdf, var='tasAdjust')
