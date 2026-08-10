@@ -478,7 +478,7 @@ if __name__ == "__main__":
     # Go through and grab the min and max range of date values from the original dataframe
     # Then create a new dataframe with all the combinations of unique coordinates and dates within that range
     startDate, endDate = pd.to_datetime(setup_data['Start Date'], utc=True), pd.to_datetime(setup_data['End Date'], utc=True)
-    runs_gdf = get_runs_gdf(startDate, endDate, gdf_unique, isDaily=args.daily)
+    runs_gdf = get_runs_gdf(startDate, endDate, gdf_unique.geometry, isDaily=args.daily)
     
     # Attach the latitude and longitude to the new dataframe
     runs_gdf['Lat'] = runs_gdf.geometry.y
