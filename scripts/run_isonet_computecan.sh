@@ -20,6 +20,8 @@ module load hdf5
 module load netcdf
 module load proj
 
+pwd
+
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip

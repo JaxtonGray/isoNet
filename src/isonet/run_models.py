@@ -194,6 +194,7 @@ def run_isonet(models: list, data: gpd.GeoDataFrame,
     return output_df
 
 if __name__ == "__main__":
+    print(os.getcwd())
     # Setup argument parser and parse command line arguments
     parser = get_parser()
     args = parser.parse_args()
