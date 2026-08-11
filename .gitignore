@@ -4,7 +4,8 @@ __pycache__/
 
 # Ignore everything withing the data and models folders
 models/*
-data/*
+data/**/*.nc
+data/**/*.tif
 
 # Ignore batch files
 **/batch_files/
