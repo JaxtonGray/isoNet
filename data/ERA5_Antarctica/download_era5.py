@@ -50,5 +50,7 @@ request = {
     "area": [90, -180, -90, 180]
 }
 
+output_file = "era5_monthly_data.zip"
+
 client = cdsapi.Client()
-client.retrieve(dataset, request).download()
+client.retrieve(dataset, request, output_file)
