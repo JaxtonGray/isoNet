@@ -72,7 +72,8 @@ def read_climate_data(dir_path: str = os.path.join('..', 'Data', 'HydroGFD', 'da
 def find_nearest_valid_grid_xarrayds(ds: xr.Dataset, 
                                      point: gpd.GeoDataFrame.geometry, 
                                      time: pd.Timestamp, var: str, 
-                                     buffer=5, grid_select=2) -> float:
+                                     buffer=5, grid_select=2,
+                                     ds_kwargs_keys: dict = {'time': 'time', 'lat': 'lat', 'lon': 'lon'}) -> float:
     # Arguments
     # ds: xarray dataset containing the variable of interest (e.g., 'prAdjust')
     # point: shapely Point object with the coordinates of the target location
@@ -82,11 +83,10 @@ def find_nearest_valid_grid_xarrayds(ds: xr.Dataset,
     # grid_select: the maximum distance (in grid units) to consider when selecting valid grid points
     # Returns
     # The value of the nearest valid grid point for the specified time
-    dsFiltered = ds.sel(
-        lon=slice(point.x - buffer, point.x + buffer), 
-        lat=slice(point.y - buffer, point.y + buffer),
-        time=time)[var]
+    sel_kwargs = {ds_kwargs_keys['time']: time, ds_kwargs_keys['lat']: slice(point.y - buffer, point.y + buffer), ds_kwargs_keys['lon']: slice(point.x - buffer, point.x + buffer)}
+    dsFiltered = ds.sel(**sel_kwargs)[var]
     
+
     mask = np.isnan(dsFiltered.values)
     dist, ids = distance_transform_edt(mask, return_indices=True)
 
@@ -100,35 +100,73 @@ def find_nearest_valid_grid_xarrayds(ds: xr.Dataset,
     data[mask] = data[tuple(ids[:, mask])]
     
     filled_arr = xr.DataArray(data, coords=dsFiltered.coords, dims=dsFiltered.dims, attrs=dsFiltered.attrs)
+
+    sel_kwargs = {ds_kwargs_keys['lat']: point.y, ds_kwargs_keys['lon']: point.x}
     
-    return filled_arr.sel(lon=point.x, lat=point.y, method='nearest').values.item()
+    return filled_arr.sel(**sel_kwargs, method='nearest').values.item()
 
 # Grab nearest grid point values for variable in dataset for all rows via vectorized indexing. For rows that are NaN, apply 
 # find_nearest_valid_grid to get the nearest valid grid point value within the specified buffer and grid selection distance.
 def attach_nearest_value_vectorized(ds: xr.Dataset, 
                                     df: pd.DataFrame | gpd.GeoDataFrame, 
-                                    var: str) -> float:
+                                    var: str,
+                                    ds_kwargs_keys: dict = {'time': 'time', 'lat': 'lat', 'lon': 'lon'}) -> float:
     # Extract the variable values at the nearest grid points for all rows in the dataframe
     times_da = xr.DataArray(df['Date'].dt.strftime('%Y-%m-%d').values, dims='points')
     lats_da = xr.DataArray(df['Lat'].values, dims='points')
     lons_da = xr.DataArray(df['Lon'].values, dims='points')
-
     # Use xarray's sel method with vectorized indexing to get the nearest values for all rows at once
+    
+    sel_kwargs = {ds_kwargs_keys['time']: times_da, ds_kwargs_keys['lat']: lats_da, ds_kwargs_keys['lon']: lons_da}
+   
     nearest_values = ds[var].sel(
-        time=times_da,
-        lat=lats_da,
-        lon=lons_da,
+        **sel_kwargs,
         method='nearest'
     )
 
     # If any values are NaN, apply the find_nearest_valid_grid function to those specific rows
-    for i, value in enumerate(nearest_values.values):
+    empty_mask = np.isnan(nearest_values.values)
+    for i, value in enumerate(nearest_values[empty_mask].values):
         if np.isnan(value):
             point = df.iloc[i]['geometry']
             time = df.iloc[i]['Date'].strftime('%Y-%m-%d')
-            nearest_values.values[i] = find_nearest_valid_grid_xarrayds(ds, point, time, var)
+            nearest_values.values[i] = find_nearest_valid_grid_xarrayds(ds, point, time, var, ds_kwargs_keys=ds_kwargs_keys)
 
     return nearest_values.values
+
+# Attach the ERA5 climate data to the dataframe only for points that are below - 60 degrees latitude, as the ERA5 data is only available for those points. For points above -60 degrees latitude, use the HydroGFD data.
+def open_era5_data(dir_path: str = os.path.join('data', 'ERA5_Antarctica', 'data_files')) -> xr.Dataset:
+    '''Open the ERA5 data from the specified directory and return it as an xarray dataset. The function will read all NetCDF files in the directory and combine them into a single dataset. Currently only monthly.
+
+    Args:
+        dir_path (str): The directory path where the ERA5 NetCDF files are located. Default is 'data/ERA5_Antarctica/data_files'.
+    Returns:
+        xr.Dataset: The combined xarray dataset containing the ERA5 data.
+    '''
+    files = glob.glob(os.path.join(dir_path, '*.nc'))
+    ds = xr.open_mfdataset(files, combine='by_coords', engine='netcdf4')
+
+    # Shift the time coordinate to the middle of the month (15th) for monthly data\
+    ds['valid_time'] = ds['valid_time'] + pd.Timedelta(days=14)
+    return ds
+
+def attach_era5_data(df: gpd.GeoDataFrame, ds: xr.Dataset) -> gpd.GeoDataFrame:
+    '''Attach ERA5 climate data to the dataframe for points below -60 degrees latitude. Used to fill in missing climate data for those points
+    Args:
+        df (gpd.GeoDataFrame): The input GeoDataFrame containing the points and their coordinates.
+        ds (xr.Dataset): The xarray dataset containing the ERA5 climate data.
+    Returns:
+        gpd.GeoDataFrame: The updated GeoDataFrame with ERA5 climate data attached for points below -60 degrees latitude.
+    '''
+    # Filter the dataframe for points below -60 degrees latitude
+    df_below_60 = df[df.geometry.y < -60].copy()
+
+    # Attach the ERA5 climate data to the filtered dataframe
+    df_below_60['Temp'] = attach_nearest_value_vectorized(ds, df_below_60, var='t2m', ds_kwargs_keys={'time': 'valid_time', 'lat': 'latitude', 'lon': 'longitude'})
+    df_below_60['Precip'] = attach_nearest_value_vectorized(ds, df_below_60, var='tp', ds_kwargs_keys={'time': 'valid_time', 'lat': 'latitude', 'lon': 'longitude'})
+
+    # Merge the updated dataframe back with the original dataframe
+    df.update(df_below_60)
 # End of Climate Data Import
 
 
