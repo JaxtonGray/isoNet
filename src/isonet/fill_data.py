@@ -144,7 +144,13 @@ def open_era5_data(dir_path: str = os.path.join('data', 'ERA5_Antarctica', 'data
         xr.Dataset: The combined xarray dataset containing the ERA5 data.
     '''
     files = glob.glob(os.path.join(dir_path, '*.nc'))
-    ds = xr.open_mfdataset(files, combine='by_coords', engine='netcdf4')
+    ds = xr.open_mfdataset(files,
+                           combine='by_coords',
+                           engine='netcdf4',
+                           join='outer',
+                           compat='override',
+                           
+                           )
 
     # Shift the time coordinate to the middle of the month (15th) for monthly data\
     ds['valid_time'] = ds['valid_time'] + pd.Timedelta(days=14)
