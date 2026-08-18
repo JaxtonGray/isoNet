@@ -84,7 +84,8 @@ def find_nearest_valid_grid_xarrayds(ds: xr.Dataset,
     # Returns
     # The value of the nearest valid grid point for the specified time
     sel_kwargs = {ds_kwargs_keys['time']: time, ds_kwargs_keys['lat']: slice(point.y - buffer, point.y + buffer), ds_kwargs_keys['lon']: slice(point.x - buffer, point.x + buffer)}
-    dsFiltered = ds.sel(**sel_kwargs)[var]
+
+    dsFiltered = ds.sortby('latitude').sel(**sel_kwargs)[var]
     
 
     mask = np.isnan(dsFiltered.values)
@@ -101,7 +102,7 @@ def find_nearest_valid_grid_xarrayds(ds: xr.Dataset,
     
     filled_arr = xr.DataArray(data, coords=dsFiltered.coords, dims=dsFiltered.dims, attrs=dsFiltered.attrs)
 
-    sel_kwargs = {ds_kwargs_keys['lat']: point.y, ds_kwargs_keys['lon']: point.x}
+    sel_kwargs = {ds_kwargs_keys['lat']: point.y, ds_kwargs_keys['lon']: point.x, ds_kwargs_keys['time']: time}
     
     return filled_arr.sel(**sel_kwargs, method='nearest').values.item()
 
@@ -552,6 +553,10 @@ if __name__ == "__main__":
         ds = read_climate_data(dir_path=os.path.join('data', 'HydroGFD', 'data_files'))
     runs_gdf['Temp'] = attach_nearest_value_vectorized(ds, runs_gdf, var='tasAdjust')
     runs_gdf['Precip'] = attach_nearest_value_vectorized(ds, runs_gdf, var='prAdjust')
+
+    # Run the ERA5 data attachment for points below -60 degrees latitude
+    era5_ds = open_era5_data(dir_path=os.path.join('data', 'ERA5_Antarctica', 'data_files'))
+    attach_era5_data(runs_gdf, era5_ds) # Updates the dataframe, does not return a new dataframe
 
     # Add Altitude data to the dataframe by joining on the geometry column
     runs_gdf = runs_gdf.join(altitudes.set_index('geometry')['Alt'], on='geometry', how='left')
