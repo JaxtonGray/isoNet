@@ -25,7 +25,7 @@ pwd
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
 pip install --no-index --upgrade pip
-pip install --no-index pandas geopandas numpy keras tensorflow h5py scikit-learn
+pip install --no-index pandas geopandas numpy keras tensorflow h5py scikit-learn tqdm
 
 # Run the training script
 python src/isonet/run_models.py "data/global_model/batch_files" --batch
