@@ -3,6 +3,7 @@
 # Import necessary libraries
 import os, glob, re, argparse
 import pandas as pd
+from tqdm import tqdm
 import geopandas as gpd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -13,6 +14,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Run the specified models on the provided data using the given schemes.')
     parser.add_argument('path', type=str, help='The path to the CSV file or directory containing the data.')
     parser.add_argument('--batch', action='store_true', help='Flag to indicate if the input path is a directory containing multiple CSV files.')
+    parser.add_argument('--verbose', action='store_true', help='Flag to indicate whether to print verbose output.')
     return parser
 
 def modelInfo(modelName, modelGuide=os.path.join('models', 'ModelGuide.csv')):
@@ -119,11 +121,12 @@ def load_schemes(schemeDir: str = os.path.join('data', 'modelsplit_schemes')) ->
         schemes[schemeName] = gpd.read_file(schemeFile)
     return schemes
 
-def runModel(model: str, inputData: gpd.GeoDataFrame, features: list) -> np.ndarray:
+def runModel(model: str, inputData: gpd.GeoDataFrame, features: list, verbose: bool = False) -> np.ndarray:
     '''Run the specified model on the provided input data using the given features.
     Args:
         model (str): The path to the model file.
         inputData (gpd.GeoDataFrame): The geodataframe containing the input data to run the model on.
+        verbose (bool): A flag to indicate whether to print verbose output. Default is False.
         features (list): A list of features to use for the model.
     Returns:
         numpy.ndarray: The predictions made by the model.'''
@@ -139,23 +142,25 @@ def runModel(model: str, inputData: gpd.GeoDataFrame, features: list) -> np.ndar
     # Load the model and make predictions
 
     model = keras.models.load_model(model)
-    predictions = model.predict(x_scaled, verbose=0)
+    predictions = model.predict(x_scaled, verbose=verbose)
     
     return predictions
 
 def run_isonet(models: list, data: gpd.GeoDataFrame, 
-               schemes: dict, modelGuide: str = os.path.join('models', 'ModelGuide.csv')):
+               schemes: dict, modelGuide: str = os.path.join('models', 'ModelGuide.csv'),
+               verbose: bool = False) -> pd.DataFrame:
     '''Run the specified models on the provided data using the given schemes.
     Args:
         models (list): A list of model names to run.
         data (gpd.GeoDataFrame): The geodataframe containing the data to run the models on.
         schemes (dict): A dictionary containing the model schemes.
         modelGuide (str): The path to the model guide CSV file. Default is 'models/ModelGuide.csv' (based on operating system).
+        verbose (bool): A flag to indicate whether to print verbose output. Default is False.
     Returns:
-        dict: A dictionary containing the results of the model runs. The keys are the model names and the values are the corresponding results.'''
+        pd.DataFrame: A dataframe containing the results of the model runs.'''
 
     output = []
-    for m in models:
+    for m in tqdm(models, desc="Running models", unit="model", disable=not verbose):
         # Extract model information
         modelType = os.path.dirname(m).split(os.sep)[1]
         modelRun = os.path.dirname(m).split(os.sep)[-1].split("_")[1]
@@ -169,7 +174,7 @@ def run_isonet(models: list, data: gpd.GeoDataFrame,
             points_in_region = gpd.clip(data, regionGDF)
 
             # Run the model on the points in the region and store the predictions
-            preds = runModel(m, points_in_region, modelFeatures)
+            preds = runModel(m, points_in_region, modelFeatures, verbose=False)
             if preds is not None:
                 # Create a new dataframe with the predictions and additional information
                 df = points_in_region.copy()
@@ -180,7 +185,7 @@ def run_isonet(models: list, data: gpd.GeoDataFrame,
                 output.append(df)
         else:
             modelRegion = 'Global'
-            preds = runModel(m, data, modelFeatures)
+            preds = runModel(m, data, modelFeatures, verbose=False)
             df = data.copy()
             df[['O18_P', 'H2_P']] = preds
             df['ModelType'] = modelType
@@ -212,7 +217,7 @@ if __name__ == "__main__":
     models = glob.glob('models/**/*.keras', recursive=True)
 
     # Run the models on the data using the schemes
-    output = run_isonet(models, data, schemes)
+    output = run_isonet(models, data, schemes, verbose=args.verbose)
 
     # Save the output to a CSV file
     output.to_csv('output.csv', index=False)
