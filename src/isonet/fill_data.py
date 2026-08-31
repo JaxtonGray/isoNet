@@ -174,6 +174,8 @@ def attach_era5_data(df: gpd.GeoDataFrame, ds: xr.Dataset) -> gpd.GeoDataFrame:
 
     # Merge the updated dataframe back with the original dataframe
     df.update(df_below_60)
+
+    return df
 # End of Climate Data Import
 
 
@@ -553,10 +555,6 @@ if __name__ == "__main__":
         ds = read_climate_data(dir_path=os.path.join('data', 'HydroGFD', 'data_files'))
     runs_gdf['Temp'] = attach_nearest_value_vectorized(ds, runs_gdf, var='tasAdjust')
     runs_gdf['Precip'] = attach_nearest_value_vectorized(ds, runs_gdf, var='prAdjust')
-
-    # Run the ERA5 data attachment for points below -60 degrees latitude
-    '''era5_ds = open_era5_data(dir_path=os.path.join('data', 'ERA5_Antarctica', 'data_files'))
-    attach_era5_data(runs_gdf, era5_ds) # Updates the dataframe, does not return a new dataframe'''
 
     # Add Altitude data to the dataframe by joining on the geometry column
     runs_gdf = runs_gdf.join(altitudes.set_index('geometry')['Alt'], on='geometry', how='left')
