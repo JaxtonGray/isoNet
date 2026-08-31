@@ -8,7 +8,7 @@
 #SBATCH --time=03:00:00
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=1-5
+#SBATCH --array=1-649
 #SBATCH --output=slurm_output/fill_data_%A_%a.out
 
 # !/bin/bash
