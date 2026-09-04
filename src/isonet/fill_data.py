@@ -85,7 +85,7 @@ def find_nearest_valid_grid_xarrayds(ds: xr.Dataset,
     # The value of the nearest valid grid point for the specified time
     sel_kwargs = {ds_kwargs_keys['time']: time, ds_kwargs_keys['lat']: slice(point.y - buffer, point.y + buffer), ds_kwargs_keys['lon']: slice(point.x - buffer, point.x + buffer)}
 
-    dsFiltered = ds.sortby('latitude').sel(**sel_kwargs)[var]
+    dsFiltered = ds.sortby(ds_kwargs_keys['lat']).sel(**sel_kwargs)[var]
     
 
     mask = np.isnan(dsFiltered.values)
