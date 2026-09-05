@@ -8,12 +8,11 @@
 #SBATCH --time=03:00:00
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=1-207
 #SBATCH --output=slurm_output/fill_data_%A_%a.out
 
 # !/bin/bash
 # This section will grab the years to run
-batchInfo=$(sed -n ${SLURM_ARRAY_TASK_ID}p runs/global_model/batch_index.txt)
+batchInfo=$(sed -n 1p runs/global_model/batch_index.txt)
 
 # Split the batchInfo into index and year
 IFS=' ' read -ra arr <<< "$batchInfo"
