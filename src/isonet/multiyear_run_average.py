@@ -71,6 +71,7 @@ if __name__ == '__main__':
     # Add to list of dataframes for each month, then concatenate them into a single dataframe
     monthly_dfs = []
     for month in range(1, 13):
+        print(f'Processing month {month}...')
         # Grab the values for the current month
         month_df = grab_month(df, month)
 
