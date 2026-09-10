@@ -5,7 +5,7 @@
 #SBATCH --gpus-per-node=h100:1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=80G
-#SBATCH --time=04:00:00
+#SBATCH --time=01:00:00
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --output=slurm_output/run_isonet_%A.out
@@ -28,4 +28,4 @@ pip install --no-index --upgrade pip
 pip install --no-index pandas geopandas numpy keras tensorflow h5py scikit-learn tqdm
 
 # Run the training script
-python src/isonet/run_models.py "runs/global_model"
+python src/isonet/multiyear_run_average.py "runs/global_model"

@@ -80,6 +80,9 @@ if __name__ == '__main__':
         # Average the results across all sites
         avg_output = average_df(output)
 
+        # Add a 'Month' column to the averaged output
+        avg_output['Month'] = month
+
         # Add the averaged output to the list of monthly dataframes
         monthly_dfs.append(avg_output)
 
