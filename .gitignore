@@ -11,9 +11,8 @@ data/**/*.tif
 **/batch_files/
 
 # Ignore the Testbook file used for testing functions
-testbook.ipynb
+testbook*.ipynb
 runs_generator.ipynb
-testbook_run.ipynb
 
 # Ignore the grid point runs
 runs/global_model/grid_points_runs.geojson

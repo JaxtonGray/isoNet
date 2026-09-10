@@ -102,6 +102,10 @@ def import_batch_data(dirPath: str) -> gpd.GeoDataFrame:
     dataset = gpd.GeoDataFrame(dataset, geometry=gpd.points_from_xy(dataset['Lon'], dataset['Lat']), crs='EPSG:4326')
     
     return dataset, oldCols
+
+# Load models
+def load_models(modelDir: str = os.path.join('models')) -> list:
+    return glob.glob(os.path.join(modelDir, '**', '*.keras'), recursive=True)
     
 
 def load_schemes(schemeDir: str = os.path.join('data', 'modelsplit_schemes')) -> dict:
