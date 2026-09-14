@@ -9,7 +9,7 @@
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --array=1-12
-#SBATCH --output=slurm_output/run_isonet_%A.out
+#SBATCH --output=slurm_output/run_isonet_%A_%a.out
 
 # !/bin/bash
 # This section will grab the month to run
