@@ -166,6 +166,7 @@ def run_isonet(models: list, data: gpd.GeoDataFrame,
     output = []
     for m in tqdm(models, desc="Running models", unit="model", disable=not verbose):
         # Extract model information
+        print(m)
         modelType = os.path.dirname(m).split(os.sep)[1]
         modelRun = os.path.dirname(m).split(os.sep)[-1].split("_")[1]
         modelScheme, modelFeatures = modelInfo(modelType, modelGuide=modelGuide)
