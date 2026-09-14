@@ -8,9 +8,12 @@
 #SBATCH --time=02:00:00
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --array=1-12
 #SBATCH --output=slurm_output/run_isonet_%A.out
 
 # !/bin/bash
+# This section will grab the month to run
+month=$(sed -n ${SLURM_ARRAY_TASK_ID}p runs/global_model/batch_months.txt)
 
 # Set up the environment
 module --force purge
@@ -28,4 +31,4 @@ pip install --no-index --upgrade pip
 pip install --no-index pandas geopandas numpy keras tensorflow h5py scikit-learn tqdm
 
 # Run the training script
-python src/isonet/multiyear_run_average.py "runs/global_model"
+python -u src/isonet/multiyear_run_average.py "runs/global_model" "$month"

@@ -14,6 +14,7 @@ import run_models as rm
 def get_parser():
     parser = argparse.ArgumentParser(description='Run multiple years of data through the isonet model and average the results.')
     parser.add_argument('path', type=str, help='Path to the directory containing the data files (batched CSV files). Use the run directory not the batch_files directory.')
+    parser.add_argument('month_batch', type=str, help='The month to run the model on (e.g. "01" for January, "02" for February, etc.)')
     parser.add_argument('--verbose', action='store_true', help='Print verbose output.')
     return parser
 
@@ -67,30 +68,16 @@ if __name__ == '__main__':
     # Load models
     models = rm.load_models()
 
-    # Cycle through each month of the year, grab the values for that month, run the model, and average the results
-    # Add to list of dataframes for each month, then concatenate them into a single dataframe
-    monthly_dfs = []
-    for month in range(1, 13):
-        print(f'Processing month {month}...')
-        # Grab the values for the current month
-        month_df = grab_month(df, month)
+    # Month to run the model on
+    month = int(args.month_batch)
 
-        # Run the model on the current month's data
-        output = rm.run_isonet(models, month_df, schemes, verbose=args.verbose)
+    # Grab all values from the specified month across all years and all sites
+    df_month = grab_month(df, month)
 
-        # Average the results across all sites
-        avg_output = average_df(output)
+    # Average the values across all years and sites
+    df_avg = average_df(df_month)
 
-        # Add a 'Month' column to the averaged output
-        avg_output['Month'] = month
-
-        # Add the averaged output to the list of monthly dataframes
-        monthly_dfs.append(avg_output)
-
-    # Concatenate the monthly dataframes into a single dataframe
-    final_df = pd.concat(monthly_dfs, ignore_index=True)
-    final_df.to_csv(os.path.join(args.path, 'multiyear_average_output.csv'), index=False)
-    
-    
-
-    
+    # Save to output_batch_files directory
+    os.makedirs(os.path.join(args.path, 'output_batch_files'), exist_ok=True)
+    output_path = os.path.join(args.path, 'output_batch_files')
+    df_avg.to_csv(os.path.join(output_path, f'averaged_{month:02d}.csv'), index=False)
