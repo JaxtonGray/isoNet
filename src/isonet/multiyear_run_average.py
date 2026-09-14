@@ -74,6 +74,9 @@ if __name__ == '__main__':
     # Grab all values from the specified month across all years and all sites
     df_month = grab_month(df, month)
 
+    # Run the model on the specified month data
+    df_month = rm.run_isonet(df_month, schemes, models, verbose=args.verbose)
+
     # Average the values across all years and sites
     df_avg = average_df(df_month)
 
