@@ -19,3 +19,6 @@ runs/global_model/grid_points_runs.geojson
 
 # Ignore Leave out runs
 runs/LeaveOut/combined_data.csv
+
+# Ignore the output batch files
+output_batch_files/

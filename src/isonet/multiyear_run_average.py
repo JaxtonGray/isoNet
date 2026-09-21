@@ -78,10 +78,10 @@ if __name__ == '__main__':
     # Run the model on the specified month data
     df_month = rm.run_isonet(models, df_month, schemes, verbose=args.verbose)
 
-    # Average the values across all years and sites
-    df_avg = average_df(df_month)
+    # Add the month column to the dataframe
+    df_month['Month'] = month
 
     # Save to output_batch_files directory
     os.makedirs(os.path.join(args.path, 'output_batch_files'), exist_ok=True)
     output_path = os.path.join(args.path, 'output_batch_files')
-    df_avg.to_csv(os.path.join(output_path, f'averaged_{month:02d}.csv'), index=False)
+    df_month.to_csv(os.path.join(output_path, f'averaged_{month:02d}.csv'), index=False)
