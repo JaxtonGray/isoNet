@@ -67,7 +67,6 @@ if __name__ == '__main__':
 
     # Load models
     models = rm.load_models()
-    print(models)
 
     # Month to run the model on
     month = int(args.month_batch)

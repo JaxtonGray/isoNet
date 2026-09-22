@@ -8,7 +8,7 @@
 #SBATCH --time=02:00:00
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=1-12
+#SBATCH --array=1-3
 #SBATCH --output=slurm_output/run_isonet_%A_%a.out
 
 # !/bin/bash
@@ -22,8 +22,6 @@ module load python/3.12
 module load hdf5
 module load netcdf
 module load proj
-
-pwd
 
 virtualenv --no-download $SLURM_TMPDIR/env
 source $SLURM_TMPDIR/env/bin/activate
