@@ -167,12 +167,12 @@ def run_isonet(models: list, data: gpd.GeoDataFrame,
     for m in tqdm(models, desc="Running models", unit="model", disable=not verbose):
         # Extract model information
         modelType = os.path.dirname(m).split(os.sep)[1]
-        modelRun = os.path.dirname(m).split(os.sep)[-1].split("_")[1]
         modelScheme, modelFeatures = modelInfo(modelType, modelGuide=modelGuide)
 
         # If the model is not a Global scheme, split input data based on geographic scheme
         if modelScheme != 'Global':
             # Get the region from the model name and filter the data based on the region
+            modelRun = os.path.dirname(m).split(os.sep)[-2].split("_")[1]
             modelRegion = os.path.basename(m).split("_")[-2]
             regionGDF = schemes[modelScheme][schemes[modelScheme]['Region'] == modelRegion]
             points_in_region = gpd.clip(data, regionGDF)
@@ -188,6 +188,7 @@ def run_isonet(models: list, data: gpd.GeoDataFrame,
                 df['Region'] = modelRegion
                 output.append(df)
         else:
+            modelRun = os.path.dirname(m).split(os.sep)[-1].split("_")[1]
             modelRegion = 'Global'
             preds = runModel(m, data, modelFeatures, verbose=False)
             df = data.copy()
