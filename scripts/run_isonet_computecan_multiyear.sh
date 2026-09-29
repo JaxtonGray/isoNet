@@ -8,7 +8,7 @@
 #SBATCH --time=02:00:00
 #SBATCH --mail-user=jaxton.gray@ucalgary.ca
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --array=1-3
+#SBATCH --array=1-12
 #SBATCH --output=slurm_output/run_isonet_%A_%a.out
 
 # !/bin/bash
